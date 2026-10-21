@@ -180,12 +180,12 @@ pub fn run(opts: CleanOpts) -> i32 {
         e.1 += p.item.size;
     }
     let mut rules: Vec<_> = by_rule.into_iter().collect();
-    rules.sort_by(|a, b| b.1 .1.cmp(&a.1 .1));
+    rules.sort_by_key(|r| std::cmp::Reverse(r.1 .1));
     for (rule, (n, sz)) in &rules {
         println!("  {:<10} {:>5} 项  {:>10}", rule, n, human_bytes(*sz));
     }
     let mut top: Vec<&PlannedRef> = plan.iter().collect();
-    top.sort_by(|a, b| b.item.size.cmp(&a.item.size));
+    top.sort_by_key(|p| std::cmp::Reverse(p.item.size));
     println!("{}", "最大 10 项:".dimmed());
     for p in top.iter().take(10) {
         println!(

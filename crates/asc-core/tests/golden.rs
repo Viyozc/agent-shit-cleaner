@@ -408,6 +408,6 @@ fn report_aggregation() {
     // 分组按体积降序
     let totals: Vec<u64> = rep.groups.iter().map(|g| g.total).collect();
     let mut sorted = totals.clone();
-    sorted.sort_by(|a, b| b.cmp(a));
+    sorted.sort_by_key(|&x| std::cmp::Reverse(x));
     assert_eq!(totals, sorted);
 }

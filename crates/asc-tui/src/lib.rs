@@ -130,7 +130,7 @@ fn build_scan_data(bundle: asc_core::report::ScanBundle) -> ScanData {
         }
         ws_total += res.items.iter().map(|i| i.size).sum::<u64>();
     }
-    groups.sort_by(|a, b| b.total.cmp(&a.total));
+    groups.sort_by_key(|g| std::cmp::Reverse(g.total));
     ScanData {
         home_total: bundle.home.total,
         home_reclaim: bundle.home.reclaimable,
@@ -304,7 +304,7 @@ impl App {
     /// 组内按体积降序的下标
     fn group_order(&self, g: &GroupDef) -> Vec<usize> {
         let mut v = g.item_idx.clone();
-        v.sort_by(|a, b| self.items[*b].size.cmp(&self.items[*a].size));
+        v.sort_by_key(|&i| std::cmp::Reverse(self.items[i].size));
         v
     }
 

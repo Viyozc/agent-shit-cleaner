@@ -76,7 +76,7 @@ pub fn build_home_report(res: &ScanResult) -> HomeReport {
         .into_iter()
         .map(|(agent, cats)| {
             let mut cats: Vec<CatCell> = cats.into_values().collect();
-            cats.sort_by(|a, b| b.size.cmp(&a.size));
+            cats.sort_by_key(|c| std::cmp::Reverse(c.size));
             let total: u64 = cats.iter().map(|c| c.size).sum();
             let reclaimable: u64 = cats.iter().map(|c| c.reclaimable).sum();
             let redownload: u64 = cats
@@ -145,7 +145,7 @@ pub fn build_workspace_report(root: &Path, res: &ScanResult, top_n: usize) -> Wo
             no_manifest: i.no_manifest,
         })
         .collect();
-    top.sort_by(|a, b| b.size.cmp(&a.size));
+    top.sort_by_key(|t| std::cmp::Reverse(t.size));
     top.truncate(top_n);
     report.top = top;
     for it in &res.items {
@@ -175,7 +175,7 @@ pub fn build_workspace_report(root: &Path, res: &ScanResult, top_n: usize) -> Wo
         }
     }
     report.groups = groups.into_values().collect();
-    report.groups.sort_by(|a, b| b.total.cmp(&a.total));
+    report.groups.sort_by_key(|g| std::cmp::Reverse(g.total));
     report
 }
 

@@ -79,7 +79,7 @@ pub fn run() -> i32 {
             None => agents.push((agent, vec![r])),
         }
     }
-    agents.sort_by(|a, b| a.0.cmp(&b.0));
+    agents.sort_by_key(|(a, _)| a.clone());
     let mut found_any = false;
     for (agent, rs) in &agents {
         let hit = rs

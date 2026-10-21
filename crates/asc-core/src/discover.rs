@@ -154,7 +154,7 @@ fn codex_cwds(dir: &Path, home: &Path, max_files: usize) -> Vec<DiscoveredRoot> 
     // 收集 jsonl（按 mtime 新→旧，最多 max_files 个），只读每个文件头 4KB
     let mut files: Vec<(std::time::SystemTime, PathBuf)> = Vec::new();
     collect_jsonl(dir, &mut files, 0);
-    files.sort_by(|a, b| b.0.cmp(&a.0));
+    files.sort_by_key(|f| std::cmp::Reverse(f.0));
     let mut out = Vec::new();
     for (_, f) in files.into_iter().take(max_files) {
         let Ok(mut fh) = fs::File::open(&f) else { continue };

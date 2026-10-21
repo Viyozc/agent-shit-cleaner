@@ -111,7 +111,7 @@ pub fn list(root: &Path) -> Vec<TrashRun> {
             }
         }
     }
-    out.sort_by(|a, b| b.created.cmp(&a.created));
+    out.sort_by_key(|r| std::cmp::Reverse(r.created));
     out
 }
 
