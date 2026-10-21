@@ -374,9 +374,10 @@ agent-shit-cleaner/
 - **M3 生态** ✅（2026-10-21 完成，33 测试全过；分发除外）：
   - 更多 agent 规则（全部官方文档/issue 核实后收录）：windsurf（`~/.codeium/windsurf/implicit` 聊天记录；memories 是记忆库**故意不加**）、continue（sessions/session.sqlite/index，社区实锤 30G 膨胀）、goose（`~/.local/share/goose/sessions` + `~/.local/state/goose/logs`；config+secrets 目录不碰）、crush（`~/.local/share/crush` 会话；config 不碰）、amp（`~/.local/share/amp/threads` 服务端会话的本地镜像；同目录 secrets.json 不在规则内）、copilot-cli（`~/.copilot/session-state`；根下配置文件不碰）
   - 项目内 agent 元数据：workspace 规则 `.crush`（crush 官方项目级数据目录，sessions/retention 90 天）
-  - 工作区自动发现（asc-core/discover.rs）：① Claude Code `~/.claude/projects/` 目录名路径编码（`/`→`-`，歧义靠存在性校验兜底）② Codex sessions jsonl 头部 `cwd`（只读每文件前 4KB，新→旧最多 120 个）③ Cursor `workspaceStorage/*/workspace.json` 的 file:// URI（percent-decode）；深度护栏（拒绝 `/`、home、<3 级路径）、跨源去重、上限 30；接线到 scan（无路径时自动扫）、clean（无路径无 config 根时兜底）、TUI 根合并、doctor 预览
+  - 工作区自动发现（asc-core/discover.rs，**仅 Unix**——Windows 上各 agent 的路径编码（盘符冒号/反斜杠 JSON 转义/file:// 盘符 URI）无真机可验证，返回空、用 config `[[workspace]]` 手工配）：① Claude Code `~/.claude/projects/` 目录名路径编码（`/`→`-`，歧义靠存在性校验兜底）② Codex sessions jsonl 头部 `cwd`（只读每文件前 4KB，新→旧最多 120 个）③ Cursor `workspaceStorage/*/workspace.json` 的 file:// URI（percent-decode）；深度护栏（拒绝 `/`、home、<3 级路径）、跨源去重、上限 30；接线到 scan（无路径时自动扫）、clean（无路径无 config 根时兜底）、TUI 根合并、doctor 预览
   - `asc doctor`：只读诊断——配置状态、生效规则统计（内置 46=41 Tier A+5 Tier B）、检测到的 agent、自动发现根预览、回收站状态
-  - 待办（M4）：分发（cargo install / homebrew / 静态二进制，需先建 git 仓库与 CI）、`.qwen/`/`.genesis/` 等项目级元数据核实后追加
+  - 待办（M4）：homebrew tap / nix（等 GitHub Release 出产物后再挂）
+- **M4 生态补全** ✅（2026-10-21）：qwen-code 用户级 4 条规则（`~/.qwen/{tmp,debug,projects,resources}`，官方文档核实；**项目级 `.qwen/` 是配置+QWEN.md 提示词，故意不加**）、workspace 规则 `.specstory`（SpecStory 官方确认 `.specstory/history` 累积聊天记录）；aider 的 `.aider.chat.history.md` 等是项目根**文件**（引擎只匹配目录，记入待定）；`.genesis` 查无实据放弃。分发物料：README.md、repository 元数据（Viyozc/agent-shit-cleaner）、CI（三平台 test+clippy -D warnings）、Release 工作流（5 target 静态二进制 + checksums，tag 触发）、git 仓库初始化。内置规则 51 条 = 46 Tier A + 5 Tier B
 
 ## 11. 后续待定问题
 

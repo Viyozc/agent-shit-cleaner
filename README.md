@@ -20,7 +20,7 @@ __pycache__ ×284       ██░░░░░░░░░░░░░░░░�
 | **Agent 大本营** | `~/.claude`、`~/.codex`、`~/.cursor` 等 12 家 agent 的 sessions/logs/caches/telemetry | 单机实测 14.3 GB |
 | **Agent 工作区** | 项目里的 `node_modules` / `target` / `.venv` / `.next` / `__pycache__` … | 727 个目录 / 170 GB+ |
 
-内置 **51 条规则**（46 大本营 + 5 项目级 Tier B），另有**工作区自动发现**：从 claude/codex/cursor 的会话元数据反推你所有项目根，不用手动配路径。
+内置 **51 条规则**（46 大本营 + 5 项目级 Tier B），另有**工作区自动发现**：从 claude/codex/cursor 的会话元数据反推你所有项目根，不用手动配路径（仅 macOS/Linux；Windows 请用 `[[workspace]]` 手动指定）。
 
 ## 安装
 
