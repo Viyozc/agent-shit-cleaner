@@ -1,0 +1,546 @@
+# agent-shit-cleaner 内置规则包
+# scope = "home"      固定路径规则（~ 基于 home 展开；pattern 为文件名通配符，仅匹配文件）
+# scope = "workspace" 目录名模式规则（作用于项目内任意层级；match_dir 支持 {a,b} 多选）
+# risk: safe(可再生) / retention(按 keep_days 过期) / redownload(可再下载，清理需显式确认)
+# 注：Tier B（dist/build/out/coverage/.cache）歧义目录默认不收录，待 M2 配置开关。
+# 注：用户可在 ~/.config/asc/rules.d/*.toml 追加或覆盖（M2）。
+
+# ────────────── Agent 大本营：Claude Code ──────────────
+
+[[rule]]
+id = "claude-code/projects"
+scope = "home"
+agent = "claude-code"
+path = "~/.claude/projects"
+pattern = "*.jsonl"
+category = "sessions"
+risk = "retention"
+keep_days = 90
+description = "会话转录（含完整对话与代码）"
+
+[[rule]]
+id = "claude-code/sessions"
+scope = "home"
+agent = "claude-code"
+path = "~/.claude/sessions"
+category = "sessions"
+risk = "retention"
+keep_days = 90
+description = "会话状态"
+
+[[rule]]
+id = "claude-code/file-history"
+scope = "home"
+agent = "claude-code"
+path = "~/.claude/file-history"
+category = "caches"
+risk = "retention"
+keep_days = 90
+description = "文件修改历史（/rewind 依赖）"
+
+[[rule]]
+id = "claude-code/shell-snapshots"
+scope = "home"
+agent = "claude-code"
+path = "~/.claude/shell-snapshots"
+category = "temp"
+risk = "safe"
+keep_days = 7
+description = "shell 环境快照"
+
+[[rule]]
+id = "claude-code/paste-cache"
+scope = "home"
+agent = "claude-code"
+path = "~/.claude/paste-cache"
+category = "temp"
+risk = "safe"
+keep_days = 7
+description = "粘贴缓存"
+
+[[rule]]
+id = "claude-code/downloads"
+scope = "home"
+agent = "claude-code"
+path = "~/.claude/downloads"
+category = "temp"
+risk = "safe"
+keep_days = 14
+description = "下载缓存"
+
+[[rule]]
+id = "claude-code/tasks"
+scope = "home"
+agent = "claude-code"
+path = "~/.claude/tasks"
+category = "temp"
+risk = "retention"
+keep_days = 30
+description = "任务状态"
+
+[[rule]]
+id = "claude-code/backups"
+scope = "home"
+agent = "claude-code"
+path = "~/.claude/backups"
+category = "temp"
+risk = "retention"
+keep_days = 30
+description = "备份"
+
+[[rule]]
+id = "claude-code/cache"
+scope = "home"
+agent = "claude-code"
+path = "~/.claude/cache"
+category = "caches"
+risk = "safe"
+keep_days = 30
+description = "缓存"
+
+# ────────────── Agent 大本营：Codex ──────────────
+
+[[rule]]
+id = "codex/sessions"
+scope = "home"
+agent = "codex"
+path = "~/.codex/sessions"
+category = "sessions"
+risk = "retention"
+keep_days = 90
+description = "会话记录"
+
+[[rule]]
+id = "codex/archived-sessions"
+scope = "home"
+agent = "codex"
+path = "~/.codex/archived_sessions"
+category = "sessions"
+risk = "retention"
+keep_days = 30
+description = "归档会话"
+
+[[rule]]
+id = "codex/cache"
+scope = "home"
+agent = "codex"
+path = "~/.codex/cache"
+category = "caches"
+risk = "safe"
+keep_days = 30
+description = "缓存"
+
+[[rule]]
+id = "codex/logs-sqlite"
+scope = "home"
+agent = "codex"
+path = "~/.codex"
+pattern = "logs_*.sqlite"
+category = "logs"
+risk = "retention"
+keep_days = 14
+description = "日志数据库"
+
+[[rule]]
+id = "codex/computer-use"
+scope = "home"
+agent = "codex"
+path = "~/.codex/computer-use"
+category = "temp"
+risk = "retention"
+keep_days = 14
+description = "computer-use 截图/产物"
+
+[[rule]]
+id = "codex/packages"
+scope = "home"
+agent = "codex"
+path = "~/.codex/packages"
+category = "packages"
+risk = "redownload"
+description = "包缓存（可重新下载）"
+
+[[rule]]
+id = "codex/plugins"
+scope = "home"
+agent = "codex"
+path = "~/.codex/plugins"
+category = "packages"
+risk = "redownload"
+description = "插件（可重新下载）"
+
+# ────────────── Agent 大本营：Cursor ──────────────
+
+[[rule]]
+id = "cursor/chats"
+scope = "home"
+agent = "cursor"
+path = "~/.cursor/chats"
+category = "sessions"
+risk = "retention"
+keep_days = 90
+description = "聊天记录"
+
+[[rule]]
+id = "cursor/ai-tracking"
+scope = "home"
+agent = "cursor"
+path = "~/.cursor/ai-tracking"
+category = "telemetry"
+risk = "safe"
+keep_days = 30
+description = "AI 用量追踪"
+
+[[rule]]
+id = "cursor/snapshots"
+scope = "home"
+agent = "cursor"
+path = "~/.cursor/snapshots"
+category = "caches"
+risk = "retention"
+keep_days = 90
+description = "快照"
+
+[[rule]]
+id = "cursor/projects"
+scope = "home"
+agent = "cursor"
+path = "~/.cursor/projects"
+category = "caches"
+risk = "retention"
+keep_days = 90
+description = "项目工作区状态"
+
+[[rule]]
+id = "cursor/extensions"
+scope = "home"
+agent = "cursor"
+path = "~/.cursor/extensions"
+category = "packages"
+risk = "redownload"
+description = "扩展（可重新安装）"
+
+# ────────────── Agent 大本营：Trae ──────────────
+
+[[rule]]
+id = "trae/extensions"
+scope = "home"
+agent = "trae"
+path = "~/.trae/extensions"
+category = "packages"
+risk = "redownload"
+description = "扩展（可重新安装）"
+
+# ────────────── Agent 大本营：Gemini / Antigravity ──────────────
+
+[[rule]]
+id = "gemini/tmp"
+scope = "home"
+agent = "gemini"
+path = "~/.gemini/tmp"
+category = "temp"
+risk = "safe"
+keep_days = 7
+description = "临时文件"
+
+[[rule]]
+id = "gemini/antigravity-backup"
+scope = "home"
+agent = "gemini"
+path = "~/.gemini/antigravity-backup"
+category = "temp"
+risk = "retention"
+keep_days = 30
+description = "Antigravity 备份"
+
+[[rule]]
+id = "gemini/browser-profile"
+scope = "home"
+agent = "gemini"
+path = "~/.gemini/antigravity-browser-profile"
+category = "caches"
+risk = "redownload"
+description = "内置浏览器缓存（清理后需重新登录）"
+
+# ────────────── Agent 大本营：OpenCode ──────────────
+# 注：~/.opencode/bin 是 opencode 本体，不碰（非目标：不管理 agent 本体）
+
+[[rule]]
+id = "opencode/node-modules"
+scope = "home"
+agent = "opencode"
+path = "~/.opencode/node_modules"
+category = "packages"
+risk = "redownload"
+description = "依赖（可重装）"
+
+# ────────────── Agent 大本营：Windsurf（M3，路径已核实） ──────────────
+# 官方文档/issue 证实 ~/.codeium/windsurf/implicit 是 Cascade 聊天记录（.pb）；
+# memories/ 是记忆库（有价值，不加规则）；编辑器本体缓存在
+# ~/Library/Application Support/Windsurf，与 VSCode 系同构，暂不覆盖。
+
+[[rule]]
+id = "windsurf/implicit-chats"
+scope = "home"
+agent = "windsurf"
+path = "~/.codeium/windsurf/implicit"
+category = "sessions"
+risk = "retention"
+keep_days = 90
+description = "Cascade 聊天记录（.pb）"
+
+# ────────────── Agent 大本营：Continue（M3，路径已核实） ──────────────
+# 官方 issue #4309/#7337：~/.continue 可膨胀到 30G，主要是 sessions 与 codebase 索引。
+
+[[rule]]
+id = "continue/sessions"
+scope = "home"
+agent = "continue"
+path = "~/.continue/sessions"
+category = "sessions"
+risk = "retention"
+keep_days = 90
+description = "会话记录（含 promptLogs，可膨胀到数十 G）"
+
+[[rule]]
+id = "continue/session-db"
+scope = "home"
+agent = "continue"
+path = "~/.continue/session.sqlite"
+category = "sessions"
+risk = "retention"
+keep_days = 90
+description = "会话数据库"
+
+[[rule]]
+id = "continue/index"
+scope = "home"
+agent = "continue"
+path = "~/.continue/index"
+category = "caches"
+risk = "redownload"
+description = "代码库索引（清理后自动重建）"
+
+# ────────────── Agent 大本营：Goose（M3，路径已核实） ──────────────
+# ~/.config/goose 是配置+secrets，永不加规则；数据在 XDG data/state。
+
+[[rule]]
+id = "goose/sessions"
+scope = "home"
+agent = "goose"
+path = "~/.local/share/goose/sessions"
+category = "sessions"
+risk = "retention"
+keep_days = 90
+description = "会话记录"
+
+[[rule]]
+id = "goose/logs"
+scope = "home"
+agent = "goose"
+path = "~/.local/state/goose/logs"
+category = "logs"
+risk = "retention"
+keep_days = 30
+description = "运行日志"
+
+# ────────────── Agent 大本营：Crush（M3，路径已核实） ──────────────
+# 官方 README：~/.local/share/crush 仅存 JSON 状态（会话）；
+# ~/.config/crush 是配置（含 API key），不加规则。
+
+[[rule]]
+id = "crush/sessions"
+scope = "home"
+agent = "crush"
+path = "~/.local/share/crush"
+category = "sessions"
+risk = "retention"
+keep_days = 90
+description = "会话 JSON 状态"
+
+# ────────────── Agent 大本营：Amp（M3，路径已核实） ──────────────
+# threads 是服务端会话的本地镜像（allaboutcoding 考证）；
+# 同目录的 secrets.json 不在规则路径内，永不被触碰。
+
+[[rule]]
+id = "amp/threads"
+scope = "home"
+agent = "amp"
+path = "~/.local/share/amp/threads"
+category = "sessions"
+risk = "retention"
+keep_days = 90
+description = "线程本地镜像（T-*.json，服务端才是源）"
+
+# ────────────── Agent 大本营：Copilot CLI（M3，路径已核实） ──────────────
+# 官方文档：~/.copilot/session-state 是完整会话记录；
+# ~/.copilot 根下的 config.json/mcp-config.json 是配置，不加规则。
+
+[[rule]]
+id = "copilot/session-state"
+scope = "home"
+agent = "copilot"
+path = "~/.copilot/session-state"
+category = "sessions"
+risk = "retention"
+keep_days = 90
+description = "会话状态（每会话一个子目录）"
+
+# ────────────── Agent 大本营：Qwen Code（M4，官方文档核实） ──────────────
+# 项目级 <project>/.qwen/ 是配置+QWEN.md 提示词（有价值），不加规则；
+# 用户级 ~/.qwen 下的 tmp/debug/projects/resources 才是可再生数据。
+# ~/.qwen/settings.json 不在任何规则路径内。
+
+[[rule]]
+id = "qwen/tmp"
+scope = "home"
+agent = "qwen"
+path = "~/.qwen/tmp"
+category = "temp"
+risk = "safe"
+keep_days = 7
+description = "临时文件"
+
+[[rule]]
+id = "qwen/debug"
+scope = "home"
+agent = "qwen"
+path = "~/.qwen/debug"
+category = "logs"
+risk = "retention"
+keep_days = 30
+description = "调试日志"
+
+[[rule]]
+id = "qwen/projects"
+scope = "home"
+agent = "qwen"
+path = "~/.qwen/projects"
+category = "sessions"
+risk = "retention"
+keep_days = 90
+description = "项目会话状态"
+
+[[rule]]
+id = "qwen/resources"
+scope = "home"
+agent = "qwen"
+path = "~/.qwen/resources"
+category = "sessions"
+risk = "retention"
+keep_days = 90
+description = "会话资源（resources/<sessionId>）"
+
+# ────────────── 工作区 Tier A（项目内目录名模式） ──────────────
+
+[[rule]]
+id = "workspace/node-modules"
+scope = "workspace"
+match_dir = "node_modules"
+require_sibling = "package.json"
+category = "build"
+risk = "redownload"
+description = "npm/pnpm/yarn 依赖（可重装）"
+
+[[rule]]
+id = "workspace/rust-target"
+scope = "workspace"
+match_dir = "target"
+require_sibling = "Cargo.toml"
+category = "build"
+risk = "redownload"
+description = "Rust 构建产物（cargo build 重生）"
+
+[[rule]]
+id = "workspace/python-venv"
+scope = "workspace"
+match_dir = "{.venv,venv}"
+require_sibling = "{pyproject.toml,requirements*.txt,setup.py}"
+category = "build"
+risk = "redownload"
+description = "Python 虚拟环境（可重建）"
+
+[[rule]]
+id = "workspace/pycache"
+scope = "workspace"
+match_dir = "__pycache__"
+category = "build"
+risk = "safe"
+description = "Python 字节码缓存"
+
+[[rule]]
+id = "workspace/js-build"
+scope = "workspace"
+match_dir = "{.next,.nuxt,.turbo,.gradle}"
+category = "build"
+risk = "redownload"
+description = "前端/构建缓存"
+
+[[rule]]
+id = "workspace/crush-state"
+scope = "workspace"
+match_dir = ".crush"
+category = "sessions"
+risk = "retention"
+keep_days = 90
+description = "项目内 Crush 会话状态（crush 官方项目级数据目录）"
+
+[[rule]]
+id = "workspace/specstory"
+scope = "workspace"
+match_dir = ".specstory"
+category = "sessions"
+risk = "retention"
+keep_days = 90
+description = "SpecStory 自动保存的 AI 聊天历史（.specstory/history，Markdown 累积）"
+
+# ────────────── 工作区 Tier B（目录名歧义，默认关闭；config tier_b = true 开启） ──────────────
+
+[[rule]]
+id = "workspace/dist"
+scope = "workspace"
+match_dir = "dist"
+require_sibling = "package.json"
+tier = "b"
+category = "build"
+risk = "redownload"
+description = "前端打包产物（dist 名字歧义，Tier B）"
+
+[[rule]]
+id = "workspace/build"
+scope = "workspace"
+match_dir = "build"
+require_sibling = "{pom.xml,build.gradle*,settings.gradle*,CMakeLists.txt,Makefile}"
+tier = "b"
+category = "build"
+risk = "redownload"
+description = "通用构建目录（build 名字歧义，Tier B）"
+
+[[rule]]
+id = "workspace/out"
+scope = "workspace"
+match_dir = "out"
+require_sibling = "{package.json,Cargo.toml}"
+tier = "b"
+category = "build"
+risk = "redownload"
+description = "构建输出目录（out 名字歧义，Tier B）"
+
+[[rule]]
+id = "workspace/coverage"
+scope = "workspace"
+match_dir = "coverage"
+require_sibling = "{package.json,pyproject.toml}"
+tier = "b"
+category = "build"
+risk = "safe"
+description = "测试覆盖率产物（Tier B）"
+
+[[rule]]
+id = "workspace/dot-cache"
+scope = "workspace"
+match_dir = ".cache"
+tier = "b"
+category = "caches"
+risk = "redownload"
+description = "项目内 .cache 目录（Tier B）"

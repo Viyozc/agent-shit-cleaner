@@ -1,0 +1,12 @@
+[package]
+name = "asc-tui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "agent-shit-cleaner TUI (ratatui)"
+
+[dependencies]
+asc-core = { path = "../asc-core" }
+ratatui = "0.29"
+crossterm = "0.28"
+dirs = { workspace = true }

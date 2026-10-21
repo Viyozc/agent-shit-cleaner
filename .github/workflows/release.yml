@@ -1,0 +1,67 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            ext: ""
+          - os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+            ext: ""
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            ext: ""
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            ext: ""
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            ext: ".exe"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+      - name: 安装 musl 工具链（Linux）
+        if: startsWith(matrix.os, 'ubuntu')
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - name: 构建
+        run: cargo build --release --target ${{ matrix.target }}
+      - name: 打包
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp target/${{ matrix.target }}/release/asc${{ matrix.ext }} dist/
+          cd dist
+          tar -czf asc-${{ github.ref_name }}-${{ matrix.target }}.tar.gz asc${{ matrix.ext }}
+          rm asc${{ matrix.ext }}
+          shasum -a 256 * > checksums.txt || sha256sum * > checksums.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.target }}
+          path: dist/
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist-all
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist-all/*
+          generate_release_notes: true

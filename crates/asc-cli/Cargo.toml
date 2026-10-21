@@ -1,0 +1,17 @@
+[package]
+name = "asc-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "agent-shit-cleaner CLI (binary: asc)"
+
+[[bin]]
+name = "asc"
+path = "src/main.rs"
+
+[dependencies]
+asc-core = { path = "../asc-core" }
+asc-tui = { path = "../asc-tui" }
+clap = { workspace = true }
+owo-colors = { workspace = true }
+dirs = { workspace = true }

@@ -1,0 +1,24 @@
+[workspace]
+resolver = "2"
+members = ["crates/asc-core", "crates/asc-cli", "crates/asc-tui"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/Viyozc/agent-shit-cleaner"
+readme = "README.md"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+rayon = "1.10"
+dirs = "5"
+owo-colors = { version = "4", features = ["supports-colors"] }
+clap = { version = "4", features = ["derive"] }
+tempfile = "3"
+filetime = "0.2"
+
+[profile.release]
+lto = "thin"
+strip = true
