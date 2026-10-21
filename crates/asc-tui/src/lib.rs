@@ -385,11 +385,7 @@ impl App {
                 }
                 KeyCode::Char('c') => return self.start_confirm(),
                 KeyCode::Char('?') => self.mode = Mode::Help,
-                KeyCode::Char('r') => {
-                    if !self.scanning {
-                        self.rescan();
-                    }
-                }
+                KeyCode::Char('r') if !self.scanning => self.rescan(),
                 _ => {}
             },
             Mode::Detail => {
@@ -482,10 +478,8 @@ impl App {
                 KeyCode::Backspace => {
                     self.shred_input.pop();
                 }
-                KeyCode::Char(c) => {
-                    if self.shred_input.len() < 16 {
-                        self.shred_input.push(c);
-                    }
+                KeyCode::Char(c) if self.shred_input.len() < 16 => {
+                    self.shred_input.push(c);
                 }
                 _ => {}
             },
