@@ -40,9 +40,11 @@ cargo install --git https://github.com/Viyozc/agent-shit-cleaner
 
 ```bash
 asc                     # TUI: dashboard → select → confirm → clean
+asc clean ~/code/foo    # interactive clean scoped to one directory (TUI)
 asc scan                # read-only: agent homes + discovered project roots
 asc scan ~/Documents    # read-only: a specific workspace
-asc clean --dry-run     # plan preview (the only mode allowed in scripts/CI)
+asc clean --agent workbuddy    # batch flow with filters (y/N in a terminal;
+                               # in scripts it only prints the plan — deletion is impossible)
 asc doctor              # read-only diagnostics: agents / rules / discovery
 ```
 
@@ -50,7 +52,8 @@ asc doctor              # read-only diagnostics: agents / rules / discovery
 
 - **Zero auto-deletion**: every deletion requires human confirmation (y/N);
   shredding big items (>1GB) requires typing `DELETE` letter by letter. There
-  is no `--yes` / `--force`; non-interactive stdin only allows `--dry-run`
+  is no `--yes` / `--force`; without an interactive terminal only the plan is
+  printed — deletion is impossible
 - **NEVER blacklist as the final gate**: `.git`, `CLAUDE.md`, `settings*`,
   `.credentials*`, `*.lock`, `memory/`, `skills/` … are blocked at the
   execution layer — even a miswritten rule cannot delete them

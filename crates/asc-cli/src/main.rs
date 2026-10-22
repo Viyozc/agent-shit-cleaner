@@ -34,9 +34,10 @@ enum Cmd {
         #[arg(long)]
         agent_only: bool,
     },
-    /// Clean (plan → y/N confirmation → system trash; non-interactive only allows --dry-run)
+    /// Clean: interactive TUI in a terminal (scoped to the given paths); with filter
+    /// flags uses the batch flow (y/N). Non-interactive runs print the plan only.
     Clean {
-        /// Workspace roots; defaults to config [[workspace]] roots, then agent homes
+        /// Workspace roots to clean interactively (exact scope, no discovery merge)
         paths: Vec<PathBuf>,
         /// Restrict to categories (sessions/logs/caches/telemetry/packages/temp/build),
         /// comma-separated; default is the safe profile (safe + expired retention)
@@ -54,9 +55,6 @@ enum Cmd {
         /// Also clean workspace junk of active projects (skipped by default)
         #[arg(long)]
         include_active: bool,
-        /// Print the plan only, execute nothing
-        #[arg(long)]
-        dry_run: bool,
     },
     /// Show config path and effective values
     Config,
@@ -252,8 +250,37 @@ fn main() {
             privacy,
             shred,
             include_active,
-            dry_run,
         }) => {
+            // No filter flags + terminal → interactive TUI (the default clean UX).
+            // Explicit paths scope the TUI exactly; no paths = config roots + discovery.
+            let interactive = std::io::stdin().is_terminal()
+                && category.is_none()
+                && agent.is_none()
+                && !privacy
+                && !shred
+                && !include_active;
+            if interactive {
+                let lc = asc_core::Config::load();
+                for w in &lc.warnings {
+                    eprintln!("{} {w}", "⚠".yellow());
+                }
+                let roots: Vec<PathBuf> = if paths.is_empty() {
+                    roots_with_discovery(&[], &lc.config)
+                } else {
+                    for p in &paths {
+                        if !p.is_dir() {
+                            eprintln!("error: {} is not a directory", p.display());
+                            std::process::exit(2);
+                        }
+                    }
+                    paths
+                };
+                let code = asc_tui::run(asc_tui::TuiOptions {
+                    workspace_roots: roots,
+                    loaded: lc,
+                });
+                std::process::exit(code);
+            }
             let code = clean_cmd::run(clean_cmd::CleanOpts {
                 paths,
                 category,
@@ -261,7 +288,6 @@ fn main() {
                 privacy,
                 shred,
                 include_active,
-                dry_run,
             });
             std::process::exit(code);
         }

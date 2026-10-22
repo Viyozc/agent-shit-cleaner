@@ -1,6 +1,7 @@
-//! `asc clean`: print plan → human confirmation (y/N; --shred requires typing
-//! DELETE) → execute. Zero auto-deletion: non-interactive stdin only allows
-//! --dry-run. Trash = the OS trash (Finder Put Back / freedesktop / Recycle Bin).
+//! `asc clean` batch flow (reached when filter flags are used): print plan →
+//! human confirmation (y/N; --shred requires typing DELETE) → execute.
+//! Zero auto-deletion: without an interactive terminal only the plan is printed.
+//! Trash = the OS trash (Finder Put Back / freedesktop / Recycle Bin).
 
 use asc_core::clean::{big_items, execute, make_plan, system_trash, Dest, SHRED_THRESHOLD};
 use asc_core::config::Config;
@@ -19,7 +20,6 @@ pub struct CleanOpts {
     pub agent: Option<String>,
     pub privacy: bool,
     pub shred: bool,
-    pub dry_run: bool,
     /// Also clean workspace junk of active projects (skipped by default)
     pub include_active: bool,
 }
@@ -240,13 +240,12 @@ pub fn run(opts: CleanOpts) -> i32 {
         );
     }
 
-    if opts.dry_run {
-        println!("\n{} dry-run: plan only, nothing was modified.", "✓".green());
-        return 0;
-    }
     if !std::io::stdin().is_terminal() {
-        eprintln!("\nerror: non-interactive stdin only supports --dry-run (deletion requires human confirmation).");
-        return 3;
+        println!(
+            "\n{} non-interactive run: plan only — nothing was deleted (deletion needs a human).",
+            "✓".green()
+        );
+        return 0;
     }
 
     // ── confirmation ──
