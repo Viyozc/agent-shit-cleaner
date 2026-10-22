@@ -21,7 +21,7 @@ __pycache__ ×284       ██░░░░░░░░░░░░░░░░�
 | **Agent homes** | sessions/logs/caches/telemetry of 13 agents: `~/.claude`, `~/.codex`, `~/.cursor`, … | 14.3 GB measured on one machine |
 | **Agent workspaces** | `node_modules` / `target` / `.venv` / `.next` / `__pycache__` inside projects | 727 dirs / 170 GB+ |
 
-**51 built-in rules** (46 home + 5 workspace Tier B), plus **workspace
+**66 built-in rules** (61 home + 5 workspace Tier B), plus **workspace
 auto-discovery**: project roots are reverse-engineered from claude/codex/cursor
 session metadata, no manual path config needed (macOS/Linux only; on Windows
 set `[[workspace]]` manually).
@@ -85,7 +85,7 @@ builtins.
 
 ## Supported agents
 
-claude-code · codex · cursor · trae · gemini/antigravity · opencode · windsurf · continue · goose · crush · amp · copilot-cli · qwen-code
+claude-code · codex · cursor · trae · gemini/antigravity · opencode · windsurf · continue · goose · crush · amp · copilot-cli · qwen-code · tencent-workbuddy · qwen-work
 Project-level: `.crush` · `.specstory` · `node_modules` · `target` · `.venv` · `__pycache__` · `.next` · `.nuxt` · `.turbo` · `.gradle` (Tier B: `dist` · `build` · `out` · `coverage` · `.cache`)
 
 Every rule was verified against official docs/issues before inclusion; PRs

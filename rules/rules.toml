@@ -544,3 +544,155 @@ tier = "b"
 category = "caches"
 risk = "redownload"
 description = "项目内 .cache 目录（Tier B）"
+
+# ────────────── Agent 大本营：Tencent WorkBuddy ──────────────
+# ~/.workbuddy 布局经实机核实（2026-10-22）。SOUL.md/USER.md/IDENTITY.md/MEMORY.md
+# 等为配置/人格文件不在规则内；memory/、skills/ 由 NEVER 黑名单兜底；
+# blobs/（产物存储）、file-history/（文件历史）、changes-*/（变更索引）含用户数据，故意不加。
+
+[[rule]]
+id = "workbuddy/projects"
+scope = "home"
+agent = "workbuddy"
+path = "~/.workbuddy/projects"
+category = "sessions"
+risk = "retention"
+keep_days = 90
+description = "按项目存的会话记录（目录名即项目路径编码，内含 jsonl 转录）"
+
+[[rule]]
+id = "workbuddy/sessions"
+scope = "home"
+agent = "workbuddy"
+path = "~/.workbuddy/sessions"
+category = "sessions"
+risk = "retention"
+keep_days = 90
+description = "会话状态"
+
+[[rule]]
+id = "workbuddy/logs"
+scope = "home"
+agent = "workbuddy"
+path = "~/.workbuddy/logs"
+category = "logs"
+risk = "retention"
+keep_days = 14
+description = "运行日志（按日期分目录）"
+
+[[rule]]
+id = "workbuddy/traces"
+scope = "home"
+agent = "workbuddy"
+path = "~/.workbuddy/traces"
+category = "telemetry"
+risk = "retention"
+keep_days = 30
+description = "调用链追踪数据"
+
+[[rule]]
+id = "workbuddy/audit-log"
+scope = "home"
+agent = "workbuddy"
+path = "~/.workbuddy/audit-log"
+category = "logs"
+risk = "retention"
+keep_days = 90
+description = "审计日志"
+
+[[rule]]
+id = "workbuddy/cache"
+scope = "home"
+agent = "workbuddy"
+path = "~/.workbuddy/cache"
+category = "caches"
+risk = "safe"
+description = "缓存"
+
+[[rule]]
+id = "workbuddy/shell-snapshots"
+scope = "home"
+agent = "workbuddy"
+path = "~/.workbuddy/shell-snapshots"
+category = "temp"
+risk = "safe"
+description = "shell 环境快照"
+
+[[rule]]
+id = "workbuddy/clipboard-images"
+scope = "home"
+agent = "workbuddy"
+path = "~/.workbuddy/clipboard-images"
+category = "temp"
+risk = "retention"
+keep_days = 30
+description = "剪贴板图片副本（含隐私，建议过期即清）"
+
+# ────────────── Agent 大本营：千问办公 QwenWork ──────────────
+# macOS 客户端（cn.qwenwork.desktop.mac，数据目录经实机核实 2026-10-22）。
+# Electron 系：Cache/Code Cache/GPUCache 等可再生；data/workspace/profile-data/
+# Local Storage 等是用户数据，故意不加。Windows 端路径未核实，规则不命中即无影响。
+
+[[rule]]
+id = "qwen-work/electron-cache"
+scope = "home"
+agent = "qwen-work"
+path = "~/Library/Application Support/QwenWorkCN/Cache"
+category = "caches"
+risk = "safe"
+description = "Electron 网络缓存"
+
+[[rule]]
+id = "qwen-work/code-cache"
+scope = "home"
+agent = "qwen-work"
+path = "~/Library/Application Support/QwenWorkCN/Code Cache"
+category = "caches"
+risk = "safe"
+description = "Electron JS 编译缓存"
+
+[[rule]]
+id = "qwen-work/gpu-cache"
+scope = "home"
+agent = "qwen-work"
+path = "~/Library/Application Support/QwenWorkCN/GPUCache"
+category = "caches"
+risk = "safe"
+description = "GPU 着色器缓存"
+
+[[rule]]
+id = "qwen-work/blob-storage"
+scope = "home"
+agent = "qwen-work"
+path = "~/Library/Application Support/QwenWorkCN/blob_storage"
+category = "temp"
+risk = "safe"
+description = "Electron blob 临时存储"
+
+[[rule]]
+id = "qwen-work/crashpad"
+scope = "home"
+agent = "qwen-work"
+path = "~/Library/Application Support/QwenWorkCN/Crashpad"
+category = "temp"
+risk = "safe"
+description = "崩溃转储"
+
+[[rule]]
+id = "qwen-work/logs"
+scope = "home"
+agent = "qwen-work"
+path = "~/Library/Application Support/QwenWorkCN/logs"
+category = "logs"
+risk = "retention"
+keep_days = 14
+description = "客户端日志"
+
+[[rule]]
+id = "qwen-work/os-cache"
+scope = "home"
+agent = "qwen-work"
+path = "~/Library/Caches/cn.qwenwork.desktop.mac"
+category = "caches"
+risk = "safe"
+description = "系统级缓存（Cache.db 等）"
