@@ -6,7 +6,7 @@ use asc_core::rule::Risk;
 use ratatui::layout::{Alignment, Constraint, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, Clear, Gauge, List, ListItem, Paragraph, Wrap};
+use ratatui::widgets::{Block, Clear, Gauge, List, ListItem, ListState, Paragraph, Wrap};
 use ratatui::Frame;
 
 const GREEN: Style = Style::new().fg(Color::Green);
@@ -159,10 +159,22 @@ fn draw_dashboard(f: &mut Frame, app: &App, area: Rect) {
         }
         rows.push(ListItem::new(Line::from(spans)));
     }
+    let title = format!(
+        " 垃圾分组（按体积降序）· {}/{} ",
+        if app.groups.is_empty() {
+            0
+        } else {
+            app.cursor + 1
+        },
+        app.groups.len()
+    );
     let list = List::new(rows)
-        .block(Block::bordered().title(" 垃圾分组（按体积降序） "))
+        .block(Block::bordered().title(title))
         .highlight_style(Style::new().bg(Color::DarkGray));
-    f.render_widget(list, area);
+    // stateful 渲染：光标行自动保持在视口内（列表超屏时跟随滚动）
+    let mut state = ListState::default();
+    state.select(Some(app.cursor));
+    f.render_stateful_widget(list, area, &mut state);
 }
 
 fn pad(s: &str, w: usize) -> String {
@@ -178,7 +190,6 @@ fn draw_detail(f: &mut Frame, app: &App, area: Rect) {
     let Some(d) = app.detail.as_ref() else { return };
     let Some(g) = app.groups.get(d.group) else { return };
     let mut rows: Vec<ListItem> = Vec::new();
-    // 保持视口简单：全部条目渲染，ratatui 自带滚动由 List state 管理（M1 先全量）
     for (row, idx) in d.order.iter().enumerate() {
         let it = &app.items[*idx];
         let cursor_span = if row == d.cursor {
@@ -214,9 +225,18 @@ fn draw_detail(f: &mut Frame, app: &App, area: Rect) {
         spans.push(Span::raw(path));
         rows.push(ListItem::new(Line::from(spans)));
     }
-    let title = format!(" {} · {} · {} 项（按体积降序） ", g.label, g.sub, g.count);
+    let title = format!(
+        " {} · {} · {}/{} 项（按体积降序） ",
+        g.label,
+        g.sub,
+        if d.order.is_empty() { 0 } else { d.cursor + 1 },
+        d.order.len()
+    );
     let list = List::new(rows).block(Block::bordered().title(title));
-    f.render_widget(list, area);
+    // stateful 渲染：光标行自动保持在视口内（列表超屏时跟随滚动）
+    let mut state = ListState::default();
+    state.select(Some(d.cursor));
+    f.render_stateful_widget(list, area, &mut state);
 }
 
 fn centered_rect(px: u16, py: u16, r: Rect) -> Rect {
