@@ -9,7 +9,6 @@ pub mod never;
 pub mod report;
 pub mod rule;
 pub mod scanner;
-pub mod trash;
 pub mod walk;
 
 pub use config::Config;

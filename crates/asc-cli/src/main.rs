@@ -1,6 +1,5 @@
 mod clean_cmd;
 mod doctor_cmd;
-mod trash_cmd;
 
 use asc_core::fmt::human_bytes;
 use asc_core::report::{build_home_report, build_workspace_report};
@@ -15,10 +14,10 @@ use std::time::Instant;
 #[command(
     name = "asc",
     version,
-    about = "agent-shit-cleaner — 扫描并清理 AI agent 留下的垃圾（大本营 + 工作区）"
+    about = "agent-shit-cleaner — scan and clean up junk left behind by AI agents (homes + workspaces)"
 )]
 struct Cli {
-    /// TUI 模式附加的工作区根目录（仅 asc 不带子命令时生效）
+    /// Extra workspace root for TUI mode (only when `asc` runs without a subcommand)
     #[arg(long)]
     root: Option<PathBuf>,
     #[command(subcommand)]
@@ -27,60 +26,42 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Cmd {
-    /// 只读扫描，输出摘要表（不做任何修改）
+    /// Read-only scan; prints a summary table (modifies nothing)
     Scan {
-        /// 工作区根目录；指定后只扫这些工作区，不扫 agent 大本营
+        /// Workspace roots; when given, only these are scanned (agent homes are skipped)
         paths: Vec<PathBuf>,
-        /// 只扫 agent 大本营
+        /// Scan agent homes only
         #[arg(long)]
         agent_only: bool,
     },
-    /// 清理（计划 → y/N 人工确认 → 回收站；非交互环境仅 --dry-run）
+    /// Clean (plan → y/N confirmation → system trash; non-interactive only allows --dry-run)
     Clean {
-        /// 工作区根目录；不给则用 config [[workspace]] 根，再退回 agent 大本营
+        /// Workspace roots; defaults to config [[workspace]] roots, then agent homes
         paths: Vec<PathBuf>,
-        /// 限定类别（sessions/logs/caches/telemetry/packages/temp/build），逗号分隔；
-        /// 不给则默认安全档（safe + 已过期 retention）
+        /// Restrict to categories (sessions/logs/caches/telemetry/packages/temp/build),
+        /// comma-separated; default is the safe profile (safe + expired retention)
         #[arg(long, value_delimiter = ',')]
         category: Option<String>,
-        /// 限定 agent（claude-code/codex/cursor/…），逗号分隔
+        /// Restrict to agents (claude-code/codex/cursor/...), comma-separated
         #[arg(long, value_delimiter = ',')]
         agent: Option<String>,
-        /// 隐私模式：清除全部会话记录（含未过期），机器转手前用
+        /// Privacy mode: remove ALL session transcripts (including unexpired) — for handing off a machine
         #[arg(long)]
         privacy: bool,
-        /// 大件（>1GB）直接粉碎不进回收站；需键入 DELETE 确认
+        /// Shred big items (>1GB) instead of trashing; requires typing DELETE
         #[arg(long)]
         shred: bool,
-        /// 连活跃项目的工作区垃圾也清理（默认跳过活跃项目）
+        /// Also clean workspace junk of active projects (skipped by default)
         #[arg(long)]
         include_active: bool,
-        /// 只打印计划，不执行
+        /// Print the plan only, execute nothing
         #[arg(long)]
         dry_run: bool,
     },
-    /// 回收站管理
-    Trash {
-        #[command(subcommand)]
-        cmd: TrashCmd,
-    },
-    /// 显示配置路径与当前生效值
+    /// Show config path and effective values
     Config,
-    /// 只读诊断：检测到的 agent、规则、自动发现的工作区、回收站
+    /// Read-only diagnostics: detected agents, rules, discovered workspaces
     Doctor,
-}
-
-#[derive(Subcommand)]
-enum TrashCmd {
-    /// 列出回收站
-    List,
-    /// 恢复一个 run 到原路径
-    Restore { run_id: String },
-    /// 清空回收站（--expired 只清超过保留期的）
-    Empty {
-        #[arg(long)]
-        expired: bool,
-    },
 }
 
 /// 左对齐：ANSI 着色字符串按"可见宽度"补空格
@@ -123,23 +104,23 @@ fn print_config() {
         eprintln!("{} {w}", "⚠".yellow());
     }
     let c = &lc.config;
-    println!("{}", "── asc 配置".bold().cyan());
+    println!("{}", "── asc config".bold().cyan());
     println!(
-        "配置文件    {}",
+        "config file  {}",
         asc_core::Config::config_path()
             .map(|p| p.display().to_string())
-            .unwrap_or_else(|| "(此平台无配置目录)".into())
+            .unwrap_or_else(|| "(no config dir on this platform)".into())
     );
     println!(
-        "用户规则    {}",
+        "user rules   {}",
         asc_core::Config::rules_dir()
             .map(|p| p.display().to_string())
             .unwrap_or_else(|| "-".into())
     );
     match c.workspace.len() {
-        0 => println!("工作区根    (未配置，用 asc scan <路径> 或 [[workspace]] 添加)"),
+        0 => println!("workspaces   (none — use `asc scan <path>` or add [[workspace]])"),
         n => {
-            println!("工作区根    ({n} 个)");
+            println!("workspaces   ({n})");
             for (r, ig) in c.workspace_roots() {
                 println!(
                     "  {}{}",
@@ -147,19 +128,18 @@ fn print_config() {
                     if ig.is_empty() {
                         String::new()
                     } else {
-                        format!("  (忽略: {})", ig.join(", "))
+                        format!("  (ignore: {})", ig.join(", "))
                     }
                 );
             }
         }
     }
-    println!("Tier B      {}", if c.tier_b { "开启" } else { "关闭" });
-    println!("活跃窗口    {} 天", c.active_days);
-    println!("回收站保留  {} 天", c.trash_keep_days);
+    println!("Tier B       {}", if c.tier_b { "on" } else { "off" });
+    println!("active days  {}", c.active_days);
     if c.keep_days.is_empty() {
-        println!("保留期覆盖  (无)");
+        println!("keep_days    (none)");
     } else {
-        println!("保留期覆盖");
+        println!("keep_days overrides");
         for (id, d) in &c.keep_days {
             println!("  {id} = {d}");
         }
@@ -171,7 +151,7 @@ fn main() {
     let cli = Cli::parse();
     match cli.cmd {
         None => {
-            // 默认进 TUI：CLI --root + config 工作区根
+            // TUI by default: CLI --root + config workspace roots
             let lc = asc_core::Config::load();
             for w in &lc.warnings {
                 eprintln!("{} {w}", "⚠".yellow());
@@ -193,7 +173,7 @@ fn main() {
         }
         Some(Cmd::Scan { paths, agent_only }) => {
             if agent_only && !paths.is_empty() {
-                eprintln!("错误：--agent-only 与路径参数不能同时使用");
+                eprintln!("error: --agent-only cannot be combined with path arguments");
                 std::process::exit(2);
             }
             let start = Instant::now();
@@ -217,23 +197,23 @@ fn main() {
                 env!("CARGO_PKG_VERSION")
             );
             if paths.is_empty() {
-                eprintln!("扫描 agent 大本营…");
+                eprintln!("scanning agent homes…");
                 let res = scan_home(None, &rules);
                 print_home(&build_home_report(&res));
-                // 自动发现：agent 会话元数据 → 项目根
+                // Auto-discovery: agent session metadata → project roots
                 let discovered: Vec<PathBuf> = asc_core::discover::discover_workspace_roots(30)
                     .into_iter()
                     .map(|d| d.path)
                     .collect();
                 if discovered.is_empty() {
                     println!(
-                        "\n{} 自动发现没有可用项目根，手动指定：{}（大目录可能需要一点时间）",
-                        "提示".bold().yellow(),
+                        "\n{} no discoverable project roots; specify one manually: {} (large trees take a moment)",
+                        "hint".bold().yellow(),
                         "asc scan ~/Documents".cyan()
                     );
                 } else {
                     eprintln!(
-                        "自动发现 {} 个项目根（claude-code/codex/cursor 会话元数据），扫描工作区…",
+                        "discovered {} project roots (claude-code/codex/cursor session metadata), scanning workspaces…",
                         discovered.len()
                     );
                     let results = scan_workspace(&discovered, &rules, &ws_opts);
@@ -244,23 +224,23 @@ fn main() {
             } else {
                 for p in &paths {
                     if !p.is_dir() {
-                        eprintln!("错误：{} 不是目录", p.display());
+                        eprintln!("error: {} is not a directory", p.display());
                         std::process::exit(2);
                     }
                 }
-                eprintln!("扫描工作区（发现目录后计算体积，大目录较慢）…");
+                eprintln!("scanning workspaces (sizing dirs after discovery, large trees are slow)…");
                 let results = scan_workspace(&paths, &rules, &ws_opts);
                 for (res, root) in results.iter().zip(paths.iter()) {
                     print_workspace(&build_workspace_report(root, res, 5));
                 }
             }
             println!(
-                "\n{} 交互式清理：直接运行 {}",
-                "提示".bold().yellow(),
+                "\n{} for interactive cleaning, just run {}",
+                "hint".bold().yellow(),
                 "asc".cyan()
             );
             println!(
-                "{} (耗时 {:.1}s)",
+                "{} ({:.1}s)",
                 "".dimmed(),
                 start.elapsed().as_secs_f64()
             );
@@ -285,23 +265,15 @@ fn main() {
             });
             std::process::exit(code);
         }
-        Some(Cmd::Trash { cmd }) => {
-            let code = match cmd {
-                TrashCmd::List => trash_cmd::list(),
-                TrashCmd::Restore { run_id } => trash_cmd::restore(&run_id),
-                TrashCmd::Empty { expired } => trash_cmd::empty(expired),
-            };
-            std::process::exit(code);
-        }
     }
 }
 
-// ────────────────── 大本营输出 ──────────────────
+// ────────────────── home output ──────────────────
 
 fn print_home(r: &asc_core::report::HomeReport) {
-    println!("\n{}", "── Agent 大本营 ".bold().cyan());
+    println!("\n{}", "── Agent homes ".bold().cyan());
     if r.rows.is_empty() {
-        println!("未发现 agent 垃圾（或未安装受支持的 agent）");
+        println!("no agent junk found (or no supported agents installed)");
         return;
     }
     println!("{:<14} {:>10} {:>10}  BREAKDOWN", "AGENT", "TOTAL", "RECLAIM");
@@ -343,12 +315,12 @@ fn print_home(r: &asc_core::report::HomeReport) {
         ),
     );
     println!(
-        "  {} 项垃圾 · {}{}",
+        "  {} junk items · {}{}",
         r.item_count,
-        format!("{} 可直接回收", human_bytes(r.reclaimable)).green(),
+        format!("{} directly reclaimable", human_bytes(r.reclaimable)).green(),
         if r.redownload > 0 {
             format!(
-                " · {} 可再下载类（标 *，清理需显式确认）",
+                " · {} redownloadable (marked *, needs explicit opt-in)",
                 human_bytes(r.redownload)
             )
             .yellow()
@@ -359,7 +331,7 @@ fn print_home(r: &asc_core::report::HomeReport) {
     );
 }
 
-// ────────────────── 工作区输出 ──────────────────
+// ────────────────── workspace output ──────────────────
 
 pub(crate) fn shorten(path: &std::path::Path) -> String {
     let s = path.display().to_string();
@@ -380,17 +352,17 @@ fn bar(frac: f64, width: usize) -> String {
 fn print_workspace(r: &asc_core::report::WorkspaceReport) {
     println!(
         "\n{} {} {}",
-        "── 工作区".bold().cyan(),
+        "── workspace".bold().cyan(),
         shorten(&r.root).bold(),
         format!(
-            "── {} 个垃圾目录 · {} ",
+            "── {} junk dirs · {} ",
             r.count,
             human_bytes(r.total)
         )
         .cyan()
     );
     if r.groups.is_empty() {
-        println!("未发现工作区垃圾目录");
+        println!("no workspace junk found");
         return;
     }
     let max = r.groups.iter().map(|g| g.total).max().unwrap_or(1) as f64;
@@ -405,17 +377,17 @@ fn print_workspace(r: &asc_core::report::WorkspaceReport) {
     println!(
         "WORKSPACE TOTAL {}  {}",
         human_bytes(r.total).bold(),
-        "(build 级，需显式勾选才清理)".yellow()
+        "(build-level; cleaned only when explicitly selected)".yellow()
     );
     if !r.top.is_empty() {
-        println!("{}", "最肥 TOP:".dimmed());
+        println!("{}", "TOP offenders:".dimmed());
         for t in &r.top {
             println!(
                 "  {:>10}  {}{}",
                 human_bytes(t.size),
                 shorten(&t.path),
                 if t.no_manifest {
-                    "  ⚠ 无清单".yellow().to_string()
+                    "  ⚠ no manifest".yellow().to_string()
                 } else {
                     String::new()
                 }
@@ -424,7 +396,7 @@ fn print_workspace(r: &asc_core::report::WorkspaceReport) {
     }
     if r.no_manifest_total > 0 {
         println!(
-            "{} {} 个目录缺少清单文件（如 package.json），清理时默认跳过",
+            "{} {} dirs lack a manifest file (e.g. package.json); skipped by default when cleaning",
             "⚠".yellow(),
             r.no_manifest_total
         );

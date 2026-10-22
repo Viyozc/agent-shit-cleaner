@@ -1,39 +1,39 @@
-# agent-shit-cleaner 配置示例
-# 复制到 ~/.config/asc/config.toml 按需修改；所有键均可省略。
-# 注意 TOML 作用域：顶层的标量键（tier_b 等）必须写在任何 [表] 之前。
+# agent-shit-cleaner config example
+# Copy to ~/.config/asc/config.toml and edit as needed; every key is optional.
+# TOML scoping note: top-level scalar keys (tier_b etc.) must come BEFORE any [table].
 
-# Tier B 规则（dist/build/out/coverage/.cache 这类名字歧义的目录）默认关闭；
-# 开启后才会参与扫描（仍需在清理时显式勾选，不会自动删）
+# Tier B rules (ambiguous dir names like dist/build/out/coverage/.cache) are
+# off by default; enable to include them in scans (still requires explicit
+# selection when cleaning — never auto-deleted)
 tier_b = false
 
-# 活跃判定窗口（天）：项目内源文件 mtime 距今小于该值 → 项目"活跃"，
-# 其工作区垃圾默认跳过（TUI 标 ⚡活跃项目，CLI 需 --include-active 才清理）
+# Activity window (days): a project whose source files were modified within
+# this window is "active" and its workspace junk is skipped by default
+# (TUI marks it ⚡active; CLI needs --include-active)
 active_days = 30
 
-# 回收站保留天数（asc trash empty --expired 按此判定过期）
-trash_keep_days = 7
-
-# 工作区根：TUI（asc）与 asc clean 不带路径时自动扫描这些根
+# Workspace roots scanned by the TUI (`asc`) and `asc clean` when no paths given
 [[workspace]]
 root = "~/Documents"
-# 可选：跳过的子目录名（如手工维护的依赖树）
+# optional: subdirectory names to skip (e.g. manually maintained dependency trees)
 # ignore = ["vendored", "third_party"]
 
-# 按规则 id 覆盖保留天数（只对 retention 类规则有意义）
+# Per-rule retention overrides (only meaningful for retention-risk rules)
 [keep_days]
 "claude-code/sessions" = 90
 # "codex/sessions" = 30
 
-# ── 用户自定义规则 ──
-# 放 ~/.config/asc/rules.d/*.toml（按文件名排序加载），与内置规则同 id 则覆盖、
-# 否则追加。格式同 rules/rules.toml，示例：
+# ── user-defined rules ──
+# Put files in ~/.config/asc/rules.d/*.toml (loaded in filename order);
+# same id overrides a builtin rule, otherwise it's appended.
+# Same format as rules/rules.toml, e.g.:
 #
 # [[rule]]
-# id = "workspace/mycorp"          # 自定 id
+# id = "workspace/mycorp"          # your id
 # scope = "workspace"
-# match_dir = "mycorp-cache"       # 目录名（支持 {a,b} 多选）
-# require_sibling = "go.mod"       # 可选：同级需存在的清单文件（支持 * 通配）
+# match_dir = "mycorp-cache"       # directory name (supports {a,b} alternatives)
+# require_sibling = "go.mod"       # optional: manifest that must exist next to it (supports * wildcards)
 # category = "caches"              # sessions/logs/caches/telemetry/packages/temp/build
-# risk = "safe"                    # safe=可再生 / retention=按保留期 / redownload=可重下
-# keep_days = 30                   # retention 时生效
-# description = "公司内部工具缓存"
+# risk = "safe"                    # safe=regenerable / retention=keep N days / redownload=re-fetchable
+# keep_days = 30                   # applies when risk = retention
+# description = "internal tooling cache"

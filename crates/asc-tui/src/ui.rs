@@ -1,4 +1,4 @@
-//! ratatui 渲染：仪表盘 / 详情 / 确认 / 粉碎输入 / 进度 / 结果 / 帮助
+//! ratatui rendering: dashboard / detail / confirm / shred input / progress / result / help
 
 use crate::{App, GroupKind, Mode};
 use asc_core::fmt::human_bytes;
@@ -38,7 +38,7 @@ pub fn draw(f: &mut Frame, app: &App) {
         _ => draw_dashboard(f, app, chunks[1]),
     }
     draw_footer(f, app, chunks[2]);
-    // 弹层
+    // popups
     match app.mode {
         Mode::Confirm => draw_confirm(f, app),
         Mode::Shred => draw_shred(f, app),
@@ -54,13 +54,13 @@ fn draw_scanning(f: &mut Frame, app: &App) {
     let area = centered_rect(50, 20, f.area());
     let text = vec![
         Line::from(Span::styled(
-            format!("{sp} 扫描中… {:.1}s", app.scan_start.elapsed().as_secs_f64()),
+            format!("{sp} scanning… {:.1}s", app.scan_start.elapsed().as_secs_f64()),
             CYAN,
         )),
         Line::from(Span::styled(
             app.opts_root_label
                 .clone()
-                .unwrap_or_else(|| "agent 大本营".into()),
+                .unwrap_or_else(|| "agent homes".into()),
             DIM,
         )),
     ];
@@ -82,20 +82,24 @@ fn draw_header(f: &mut Frame, app: &App, area: Rect) {
     let line = Line::from(vec![
         Span::styled(" agent-shit-cleaner ", CYAN_BOLD),
         Span::raw(format!(
-            "大本营 {} (可回收 {}) ",
+            "homes {} (reclaimable {}) ",
             human_bytes(app.home_total),
             human_bytes(app.home_reclaim)
         )),
         if app.ws_total > 0 {
             Span::styled(
-                format!("· 工作区 {} ", human_bytes(app.ws_total)),
+                format!("· workspaces {} ", human_bytes(app.ws_total)),
                 YELLOW,
             )
         } else {
             Span::raw("")
         },
         Span::styled(
-            format!("· 已选 {} 项 {}", app.selected.len(), human_bytes(sel)),
+            format!(
+                "· selected {} items {}",
+                app.selected.len(),
+                human_bytes(sel)
+            ),
             if app.selected.is_empty() { DIM } else { GREEN },
         ),
     ]);
@@ -141,13 +145,13 @@ fn draw_dashboard(f: &mut Frame, app: &App, area: Rect) {
             cursor_span,
             check,
             Span::styled(label, label_style),
-            Span::styled(format!("{:>6} 项 ", g.count), DIM),
+            Span::styled(format!("{:>6} items ", g.count), DIM),
             Span::styled(bar, if g.kind == GroupKind::Workspace { YELLOW } else { CYAN }),
             Span::styled(size, Style::new().fg(Color::White)),
         ];
         if g.reclaimable > 0 {
             spans.push(Span::styled(
-                format!("  可回收 {}", human_bytes(g.reclaimable)),
+                format!("  reclaim {}", human_bytes(g.reclaimable)),
                 GREEN,
             ));
         }
@@ -160,7 +164,7 @@ fn draw_dashboard(f: &mut Frame, app: &App, area: Rect) {
         rows.push(ListItem::new(Line::from(spans)));
     }
     let title = format!(
-        " 垃圾分组（按体积降序）· {}/{} ",
+        " junk groups (by size) · {}/{} ",
         if app.groups.is_empty() {
             0
         } else {
@@ -171,7 +175,7 @@ fn draw_dashboard(f: &mut Frame, app: &App, area: Rect) {
     let list = List::new(rows)
         .block(Block::bordered().title(title))
         .highlight_style(Style::new().bg(Color::DarkGray));
-    // stateful 渲染：光标行自动保持在视口内（列表超屏时跟随滚动）
+    // stateful rendering keeps the cursor row inside the viewport
     let mut state = ListState::default();
     state.select(Some(app.cursor));
     f.render_stateful_widget(list, area, &mut state);
@@ -210,30 +214,30 @@ fn draw_detail(f: &mut Frame, app: &App, area: Rect) {
         let path = crate::shorten(&it.path);
         let mut spans = vec![cursor_span, check, Span::raw(size), Span::styled(age, DIM)];
         if it.reclaimable() {
-            spans.push(Span::styled("◂可回收 ", GREEN));
+            spans.push(Span::styled("↩reclaimable ", GREEN));
         } else if it.risk == Risk::Redownload {
-            spans.push(Span::styled("R可再下载 ", YELLOW));
+            spans.push(Span::styled("⟳redownload ", YELLOW));
         } else {
-            spans.push(Span::styled("…保留期内 ", DIM));
+            spans.push(Span::styled("…in retention ", DIM));
         }
         if it.no_manifest {
-            spans.push(Span::styled("⚠无清单 ", YELLOW));
+            spans.push(Span::styled("⚠no-manifest ", YELLOW));
         }
         if it.active == Some(true) {
-            spans.push(Span::styled("⚡活跃项目 ", YELLOW));
+            spans.push(Span::styled("⚡active ", YELLOW));
         }
         spans.push(Span::raw(path));
         rows.push(ListItem::new(Line::from(spans)));
     }
     let title = format!(
-        " {} · {} · {}/{} 项（按体积降序） ",
+        " {} · {} · item {}/{} (by size) ",
         g.label,
         g.sub,
         if d.order.is_empty() { 0 } else { d.cursor + 1 },
         d.order.len()
     );
     let list = List::new(rows).block(Block::bordered().title(title));
-    // stateful 渲染：光标行自动保持在视口内（列表超屏时跟随滚动）
+    // stateful rendering keeps the cursor row inside the viewport
     let mut state = ListState::default();
     state.select(Some(d.cursor));
     f.render_stateful_widget(list, area, &mut state);
@@ -275,53 +279,53 @@ fn draw_confirm(f: &mut Frame, app: &App) {
     }
     let mut lines = vec![
         Line::from(Span::styled(
-            format!("将处理 {n} 项 · {}", human_bytes(total)),
+            format!("About to process {n} items · {}", human_bytes(total)),
             BOLD,
         )),
         Line::from(vec![
-            Span::raw("  可再生 "),
+            Span::raw("  regenerable "),
             Span::styled(format!("{safe_n}"), GREEN),
-            Span::raw(" · 已过期 "),
+            Span::raw(" · expired "),
             Span::styled(format!("{expired_n}"), GREEN),
-            Span::raw(" · 需显式确认 "),
+            Span::raw(" · needs explicit opt-in "),
             Span::styled(format!("{rd_n}"), YELLOW),
         ]),
-        Line::from(Span::raw("")),
+        Line::from(""),
         Line::from(Span::styled(
-            "→ 全部移入回收站（保留 7 天，可 asc trash restore 反悔）",
+            "→ everything goes to the OS trash (recover via Finder \"Put Back\" or your DE's trash)",
             GREEN,
         )),
     ];
     if big_n > 0 {
         lines.push(Line::from(Span::styled(
             format!(
-                "ℹ 含 {big_n} 个大件（{}）>1GB：进回收站不省磁盘空间",
+                "ℹ {big_n} big item(s) ({}), each >1GB: trashing saves no disk space",
                 human_bytes(big_bytes)
             ),
             YELLOW,
         )));
         lines.push(Line::from(Span::styled(
-            "  按 s 改为直接粉碎（不可恢复，需键入 DELETE）",
+            "  press s to shred instead (irreversible; requires typing DELETE)",
             YELLOW,
         )));
     }
     lines.push(Line::from(Span::raw("")));
     lines.push(Line::from(vec![
-        Span::styled("[Enter 确认]", GREEN),
+        Span::styled("[Enter confirm]", GREEN),
         Span::raw("  "),
         if big_n > 0 {
-            Span::styled("[s 大件粉碎]", RED)
+            Span::styled("[s shred big]", RED)
         } else {
             Span::raw("")
         },
         Span::raw("  "),
-        Span::styled("[Esc 取消]", DIM),
+        Span::styled("[Esc cancel]", DIM),
     ]));
     let area = centered_rect(72, 40, f.area());
     f.render_widget(Clear, area);
     f.render_widget(
         Paragraph::new(lines)
-            .block(Block::bordered().title(Span::styled(" 确认清理 ", RED_BOLD)))
+            .block(Block::bordered().title(Span::styled(" confirm clean ", RED_BOLD)))
             .wrap(Wrap { trim: true }),
         area,
     );
@@ -333,25 +337,25 @@ fn draw_shred(f: &mut Frame, app: &App) {
     let lines = vec![
         Line::from(Span::styled(
             format!(
-                "{big_n} 个大件（{}）将直接粉碎——不可恢复！",
+                "{big_n} big item(s) ({}) will be shredded — IRREVERSIBLE!",
                 human_bytes(big_bytes)
             ),
             RED,
         )),
         Line::from(""),
         Line::from(vec![
-            Span::raw("输入 DELETE 确认："),
+            Span::raw("type DELETE to confirm: "),
             Span::styled(shown, Style::new().fg(Color::Red).add_modifier(Modifier::BOLD)),
             Span::styled("▏", CYAN),
         ]),
         Line::from(""),
-        Line::from(Span::styled("[Enter 提交] [Esc 返回]", DIM)),
+        Line::from(Span::styled("[Enter submit] [Esc back]", DIM)),
     ];
     let area = centered_rect(60, 30, f.area());
     f.render_widget(Clear, area);
     f.render_widget(
         Paragraph::new(lines)
-            .block(Block::bordered().title(Span::styled(" ⚠ 大件粉碎 ", RED_BOLD)))
+            .block(Block::bordered().title(Span::styled(" ⚠ shred big items ", RED_BOLD)))
             .alignment(Alignment::Center)
             .wrap(Wrap { trim: true }),
         area,
@@ -367,9 +371,9 @@ fn draw_cleaning(f: &mut Frame, app: &App) {
     };
     let gauge = Gauge::default()
         .ratio(ratio.clamp(0.0, 1.0))
-        .label(format!(" 清理中 {done}/{total} "))
+        .label(format!(" cleaning {done}/{total} "))
         .gauge_style(Style::new().fg(Color::Green).bg(Color::Black))
-        .block(Block::bordered().title(" 执行 "));
+        .block(Block::bordered().title(" executing "));
     let area = centered_rect(50, 16, f.area());
     f.render_widget(Clear, area);
     f.render_widget(gauge, area);
@@ -378,37 +382,43 @@ fn draw_cleaning(f: &mut Frame, app: &App) {
 fn draw_result(f: &mut Frame, app: &App) {
     let Some(o) = app.outcome.as_ref() else { return };
     let mut lines = vec![
-        Line::from(Span::styled("✅ 清理完成", GREEN_BOLD)),
+        Line::from(Span::styled("✅ clean finished", GREEN_BOLD)),
         Line::from(""),
         Line::from(Span::styled(
-            format!("  释放 {}", human_bytes(o.freed_bytes)),
+            format!("  freed {}", human_bytes(o.freed_bytes)),
             Style::new().fg(Color::Green).add_modifier(Modifier::BOLD),
         )),
         Line::from(format!(
-            "  {} 项进回收站 · {} 项粉碎 · 失败 {} 项",
+            "  {} items to trash · {} shredded · {} failed",
             o.trashed_count, o.shredded_count, o.failed.len()
         )),
     ];
-    if let Some(id) = &o.trash_run_id {
+    if o.trashed_count > 0 {
         lines.push(Line::from(Span::styled(
-            format!("  反悔：asc trash restore {id}"),
+            "  recover from the OS trash (macOS Finder: right-click → Put Back)",
             CYAN,
         )));
     }
     if !o.failed.is_empty() {
         lines.push(Line::from(Span::styled(
-            format!("  失败示例：{}", o.failed[0].0.display()),
+            format!("  first failure: {}", o.failed[0].0.display()),
             RED,
         )));
     }
     if !o.never_blocked.is_empty() {
         lines.push(Line::from(Span::styled(
-            format!("  ⚠ NEVER 拦截 {} 项（规则疑似配错）", o.never_blocked.len()),
+            format!(
+                "  ⚠ NEVER blocked {} item(s) (rule likely misconfigured)",
+                o.never_blocked.len()
+            ),
             YELLOW,
         )));
     }
     lines.push(Line::from(""));
-    lines.push(Line::from(Span::styled("[Enter 重新扫描] [q 退出]", DIM)));
+    lines.push(Line::from(Span::styled(
+        "[Enter rescan] [q quit]",
+        DIM,
+    )));
     let area = centered_rect(66, 40, f.area());
     f.render_widget(Clear, area);
     f.render_widget(
@@ -422,15 +432,15 @@ fn draw_result(f: &mut Frame, app: &App) {
 
 fn draw_help(f: &mut Frame, area: Rect) {
     let keys = vec![
-        ("↑/↓ j/k", "移动光标"),
-        ("Enter", "进入分组详情（逐项勾选）"),
-        ("space", "勾选/取消（分组页=整组可回收项；详情页=单项）"),
-        ("a", "详情页：全选组内可回收项"),
-        ("c", "确认清理（弹窗：Enter 执行 / s 大件粉碎 / Esc 取消）"),
-        ("s", "确认弹窗：>1GB 大件改为直接粉碎（需键入 DELETE）"),
-        ("r", "重新扫描"),
-        ("?", "帮助"),
-        ("q/Esc", "退出/返回"),
+        ("↑/↓ j/k", "move cursor"),
+        ("Enter", "open group details (per-item selection)"),
+        ("space", "toggle (dashboard = group's reclaimable items; detail = one item)"),
+        ("a", "in details: select all reclaimable items of the group"),
+        ("c", "confirm clean (popup: Enter execute / s shred big / Esc cancel)"),
+        ("s", "in the popup: shred >1GB items instead (requires typing DELETE)"),
+        ("r", "rescan"),
+        ("?", "help"),
+        ("q/Esc", "quit/back"),
     ];
     let lines: Vec<Line> = keys
         .into_iter()
@@ -443,15 +453,15 @@ fn draw_help(f: &mut Frame, area: Rect) {
         .collect();
     f.render_widget(
         Paragraph::new(lines)
-            .block(Block::bordered().title(" 按键 ")),
+            .block(Block::bordered().title(" keys ")),
         area,
     );
 }
 
 fn draw_footer(f: &mut Frame, app: &App, area: Rect) {
     let left = match app.mode {
-        Mode::Dashboard => "↑↓ 移动 · space 勾选组 · Enter 详情 · c 清理 · ? 帮助 · q 退出",
-        Mode::Detail => "space 勾选 · a 全选可回收 · c 清理 · Esc 返回",
+        Mode::Dashboard => "↑↓ move · space toggle group · Enter details · c clean · ? help · q quit",
+        Mode::Detail => "space toggle · a select all reclaimable · c clean · Esc back",
         Mode::Confirm | Mode::Shred | Mode::Cleaning | Mode::Result | Mode::Help => "",
     };
     let line = if app.note.is_empty() {

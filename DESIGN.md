@@ -378,6 +378,7 @@ agent-shit-cleaner/
   - `asc doctor`：只读诊断——配置状态、生效规则统计（内置 46=41 Tier A+5 Tier B）、检测到的 agent、自动发现根预览、回收站状态
   - 待办（M4）：homebrew tap / nix（等 GitHub Release 出产物后再挂）
 - **M4 生态补全** ✅（2026-10-21）：qwen-code 用户级 4 条规则（`~/.qwen/{tmp,debug,projects,resources}`，官方文档核实；**项目级 `.qwen/` 是配置+QWEN.md 提示词，故意不加**）、workspace 规则 `.specstory`（SpecStory 官方确认 `.specstory/history` 累积聊天记录）；aider 的 `.aider.chat.history.md` 等是项目根**文件**（引擎只匹配目录，记入待定）；`.genesis` 查无实据放弃。分发物料：README.md、repository 元数据（Viyozc/agent-shit-cleaner）、CI（三平台 test+clippy -D warnings）、Release 工作流（5 target 静态二进制 + checksums，tag 触发）、git 仓库初始化。内置规则 51 条 = 46 Tier A + 5 Tier B
+- **M5 系统废纸篓 + 英文化** ✅（2026-10-22，v0.2.0）：**放弃自制回收站改用 OS trash**（trash crate：macOS Finder（支持 Put Back）/ freedesktop.org / Windows 回收站）——用户不想维护独立 trash 存储；删除 asc-core/trash.rs 与 `asc trash` list/restore/empty 子命令（系统废纸篓的恢复靠 Finder 放回原处），config 删 `trash_keep_days`（旧配置文件含此键不报错，serde 忽略未知字段）；clean.rs `execute()` 改为注入删除操作闭包（生产 `system_trash` 包装 trash crate，测试用 tempdir 假闭包——测试永不碰真系统废纸篓）；Outcome 删 trash_run_id。**用户可见输出全部英文化**：CLI（scan/clean/config/doctor 帮助与输出）+ TUI 全部界面 + config.example.toml + README（DESIGN.md 保留中文作为设计史）
 
 ## 11. 后续待定问题
 

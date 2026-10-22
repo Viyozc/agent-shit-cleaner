@@ -3,12 +3,11 @@
 
 mod ui;
 
-use asc_core::clean::{execute, make_plan, PlannedItem};
+use asc_core::clean::{execute, make_plan, system_trash, PlannedItem};
 use asc_core::config::LoadedConfig;
 use asc_core::report::scan_bundle_with;
 use asc_core::rule::{load_rules, Risk};
 use asc_core::scanner::{JunkItem, WorkspaceOpts};
-use asc_core::trash;
 use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use ratatui::Terminal;
 use std::collections::BTreeSet;
@@ -84,7 +83,7 @@ fn build_scan_data(bundle: asc_core::report::ScanBundle) -> ScanData {
         push_group(
             &mut groups,
             agent.clone(),
-            "agent 大本营".into(),
+            "agent homes".into(),
             GroupKind::Home,
             &items,
             idxs,
@@ -199,10 +198,8 @@ fn spawn_scan(tx: mpsc::Sender<Msg>, roots: Vec<PathBuf>, loaded: LoadedConfig) 
 
 fn spawn_clean(tx: mpsc::Sender<Msg>, plan: Vec<PlannedItem>) {
     thread::spawn(move || {
-        let trash_root = trash::trash_root();
-        let t = tx.clone();
-        let out = execute(&plan, &trash_root, &|d, n, _| {
-            let _ = t.send(Msg::CleanProgress(d, n));
+        let out = execute(&plan, &system_trash, &|d, n, _| {
+            let _ = tx.send(Msg::CleanProgress(d, n));
         });
         let _ = tx.send(Msg::CleanDone(Box::new(out)));
     });
@@ -323,7 +320,7 @@ impl App {
             .filter(|&i| self.default_pickable(i))
             .collect();
         if rec.is_empty() {
-            self.note = "该组没有默认可回收项（可进入详情用 space 显式勾选）".into();
+            self.note = "no default-reclaimable items in this group (open details, space selects explicitly)".into();
             return;
         }
         if rec.iter().all(|i| self.selected.contains(i)) {
@@ -339,7 +336,7 @@ impl App {
 
     fn start_confirm(&mut self) -> Option<Action> {
         if self.selected.is_empty() {
-            self.note = "先勾选：space 勾选组 / Enter 进详情逐项勾选".into();
+            self.note = "select something first: space toggles a group / Enter opens per-item details".into();
             return None;
         }
         self.pending_selected = self.selected.iter().copied().collect();
@@ -456,7 +453,7 @@ impl App {
                         self.shred_input.clear();
                         self.mode = Mode::Shred;
                     } else {
-                        self.note = "没有 >1GB 大件，无需粉碎".into();
+                        self.note = "no items >1GB — nothing to shred".into();
                     }
                 }
                 KeyCode::Enter => {
@@ -472,7 +469,7 @@ impl App {
                         let items = self.selected_items();
                         return Some(Action::Clean(make_plan(items, true)));
                     }
-                    self.note = "输入不匹配，请完整输入 DELETE（Esc 返回）".into();
+                    self.note = "input mismatch — type DELETE in full (Esc to go back)".into();
                     self.shred_input.clear();
                 }
                 KeyCode::Backspace => {
@@ -535,11 +532,11 @@ pub fn run(opts: TuiOptions) -> i32 {
     let mut terminal = match init {
         Ok(Ok(t)) => t,
         Ok(Err(e)) => {
-            eprintln!("无法初始化终端: {e}");
+            eprintln!("failed to init terminal: {e}");
             return 1;
         }
         Err(e) => {
-            eprintln!("终端初始化 panic: {e:?}");
+            eprintln!("terminal init panic: {e:?}");
             return 1;
         }
     };
@@ -550,7 +547,7 @@ pub fn run(opts: TuiOptions) -> i32 {
     match result {
         Ok(Ok(code)) => code,
         Ok(Err(e)) => {
-            eprintln!("TUI 错误: {e}");
+            eprintln!("TUI error: {e}");
             1
         }
         Err(e) => {

@@ -31,16 +31,10 @@ pub struct Config {
     /// 活跃判定窗口（天）：项目源码 mtime 距今小于该值 → 项目活跃
     #[serde(default = "d_active_days")]
     pub active_days: u64,
-    /// 回收站保留天数
-    #[serde(default = "d_trash_keep_days")]
-    pub trash_keep_days: u64,
 }
 
 fn d_active_days() -> u64 {
     30
-}
-fn d_trash_keep_days() -> u64 {
-    7
 }
 
 impl Default for Config {
@@ -50,7 +44,6 @@ impl Default for Config {
             keep_days: BTreeMap::new(),
             tier_b: false,
             active_days: d_active_days(),
-            trash_keep_days: d_trash_keep_days(),
         }
     }
 }
@@ -142,7 +135,6 @@ mod tests {
         let text = r#"
 tier_b = true
 active_days = 14
-trash_keep_days = 3
 
 [[workspace]]
 root = "~/Documents"
@@ -159,7 +151,6 @@ ignore = ["vendored"]
         assert_eq!(c.keep_days.get("claude-code/sessions"), Some(&30));
         assert!(c.tier_b);
         assert_eq!(c.active_days, 14);
-        assert_eq!(c.trash_keep_days, 3);
     }
 
     #[test]
@@ -167,8 +158,15 @@ ignore = ["vendored"]
         let c: Config = toml::from_str("").unwrap();
         assert!(!c.tier_b);
         assert_eq!(c.active_days, 30);
-        assert_eq!(c.trash_keep_days, 7);
         assert!(c.workspace.is_empty());
+    }
+
+    #[test]
+    fn legacy_trash_keep_days_ignored() {
+        // v0.1 配置里可能有 trash_keep_days（v0.2 起改用系统废纸篓，字段已删）；
+        // serde 默认忽略未知字段，不应报错
+        let c: Config = toml::from_str("trash_keep_days = 3\n").unwrap();
+        assert_eq!(c.active_days, 30);
     }
 
     #[test]

@@ -10,6 +10,7 @@ serde = { workspace = true }
 toml = { workspace = true }
 rayon = { workspace = true }
 dirs = { workspace = true }
+trash = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
