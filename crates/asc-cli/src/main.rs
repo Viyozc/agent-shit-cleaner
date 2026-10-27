@@ -1,5 +1,6 @@
 mod clean_cmd;
 mod doctor_cmd;
+mod ports_cmd;
 
 use asc_core::fmt::human_bytes;
 use asc_core::report::{build_home_report, build_workspace_report};
@@ -55,6 +56,16 @@ enum Cmd {
         /// Also clean workspace junk of active projects (skipped by default)
         #[arg(long)]
         include_active: bool,
+    },
+    /// List listening TCP ports (dev servers, databases...) with their project paths;
+    /// with --kill, terminate the matching processes (per-item confirmation)
+    Ports {
+        /// Ports or PIDs to terminate, comma-separated or repeated (e.g. --kill 3000,5432)
+        #[arg(long, value_delimiter = ',')]
+        kill: Vec<u64>,
+        /// Escalate to SIGKILL when a process survives SIGTERM
+        #[arg(long)]
+        force: bool,
     },
     /// Show config path and effective values
     Config,
@@ -164,6 +175,10 @@ fn main() {
         }
         Some(Cmd::Config) => {
             print_config();
+        }
+        Some(Cmd::Ports { kill, force }) => {
+            let code = ports_cmd::run(ports_cmd::PortsOpts { kill, force });
+            std::process::exit(code);
         }
         Some(Cmd::Doctor) => {
             let code = doctor_cmd::run();

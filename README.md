@@ -45,6 +45,9 @@ asc scan                # read-only: agent homes + discovered project roots
 asc scan ~/Documents    # read-only: a specific workspace
 asc clean --agent workbuddy    # batch flow with filters (y/N in a terminal;
                                # in scripts it only prints the plan — deletion is impossible)
+asc ports               # read-only: listening ports + process + project path
+asc ports --kill 3000,5173   # terminate dev servers (per-process y/N; SIGTERM,
+                             # escalate with --force; refuses without a TTY)
 asc doctor              # read-only diagnostics: agents / rules / discovery
 ```
 
